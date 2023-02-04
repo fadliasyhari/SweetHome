@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          Int           @id @default(autoincrement())
+  phone       String        @unique
+  password    String
+  name        String
+  role        Role          @default(TENANT)
+  profile     Profile?
+  posts       Post[]
+  feedback    Feedback[]
+  transaction Transaction[]
+}
+
+model Profile {
+  id     Int    @id @default(autoincrement())
+  userId Int    @unique
+  user   User   @relation(fields: [userId], references: [id])
+  image  String
+}
+
+model Post {
+  id          Int           @id @default(autoincrement())
+  author      User          @relation(fields: [authorId], references: [id])
+  authorId    Int
+  title       String
+  address     String
+  price       Int
+  image       String
+  published   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  feedback    Feedback[]
+  transaction Transaction[]
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  parent    Post     @relation(fields: [parentId], references: [id])
+  parentId  Int
+  title     String
+  content   String?
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  tenant    User     @relation(fields: [tenantId], references: [id])
+  tenantId  Int
+  note      String?
+  status    Int
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  TENANT
+  OWNER
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
