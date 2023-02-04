@@ -15,6 +15,21 @@ const app = express()
 
 app.use(express.json())
 
+app.post(`/register`, async (req, res) => {
+  const { name, role, phone, password } = req.body
+  const hashed = await bcrypt.hash(password, 10)
+  const result = await prisma.user.create({
+    data: {
+      phone,
+      name,
+      password: hashed,
+      role: role
+    }
+  })
+  let token = jwToken.sign({ id: result.id, phone: result.phone, role: result.role })
+  res.json({ name, phone, token: token })
+})
+
 app.get('/users', authentication, async (req, res) => {
   const users = await prisma.user.findMany()
   res.json(users)
@@ -51,21 +66,6 @@ app.post('/verify-code', async (req, res) => {
 
   return res.status(400).json({ message: `The phone number and the SMS code doesn't match.` });
 });
-
-app.post(`/register`, async (req, res) => {
-  const { name, role, phone, password } = req.body
-  const hashed = await bcrypt.hash(password, 10)
-  const result = await prisma.user.create({
-    data: {
-      phone,
-      name,
-      password: hashed,
-      role: role
-    }
-  })
-  let token = jwToken.sign({ id: result.id, phone: result.phone, role: result.role })
-  res.json({ name, phone, token: token })
-})
 
 app.post(`/login`, async (req, res) => {
   const { phone, password } = req.body;
