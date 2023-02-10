@@ -7,6 +7,6 @@ import { userRoute } from './user.route';
 export const routes = express.Router()
 
 routes.use("/user", userRoute)
-routes.use("/house", houseRoute)
+routes.use("/offer", houseRoute)
 routes.use("/order", orderRoute)
 routes.use("/feedback", feedbackRoute)

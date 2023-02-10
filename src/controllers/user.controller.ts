@@ -1,15 +1,19 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, Role } from "@prisma/client"
 import { jwToken } from "../utils/jwt.util"
 import bcrypt from "bcrypt"
 import { generateRandomSixDigitsNumber } from "../utils/random-number.util"
 import { redisClient } from "../utils/redis-client.util"
 import { twilioClient } from "../utils/twilio-client.util"
+import { Request, Response } from "express"
 
 const prisma = new PrismaClient()
 
 export const userController = {
-  async register(req: any, res: any) {
+  async register(req: Request, res: Response) {
     const { name, role, phone, password } = req.body
+    if (!name || !phone || !role || !password) {
+      throw new Error("please complete the data")
+    }
     const hashedPassword = await bcrypt.hash(password, 10)
     const createdUser = await prisma.user.create({
       data: {
@@ -23,7 +27,7 @@ export const userController = {
     res.json({ name, phone, token: token })
   },
 
-  async login(req: any, res: any) {
+  async login(req: Request, res: Response) {
     const { phone, password } = req.body;
     const user = await prisma.user.findUnique({
       where: {
@@ -42,10 +46,10 @@ export const userController = {
     }
 
     let token = jwToken.sign({ id: user.id, phone: user.phone, role: user.role })
-    return res.json({ phone: user.phone, name: user.name, token: token })
+    res.json({ phone: user.phone, name: user.name, token: token })
   },
 
-  async getAllTenant(req: any, res: any) {
+  async getAllTenant(_req: Request, res: Response) {
     const listTenant = await prisma.user.findMany({
       select: {
         id: true,
@@ -53,13 +57,13 @@ export const userController = {
         name: true
       },
       where: {
-        role: 'TENANT'
+        role: Role.TENANT
       }
     })
-    res.json(listTenant)
+    res.json({ result: listTenant })
   },
 
-  async getAllOwner(req: any, res: any) {
+  async getAllOwner(_req: Request, res: Response) {
     const listOwner = await prisma.user.findMany({
       select: {
         id: true,
@@ -67,16 +71,18 @@ export const userController = {
         name: true
       },
       where: {
-        role: 'OWNER'
+        role: Role.OWNER
       }
     })
-    res.json(listOwner)
+    res.json({ result: listOwner })
   },
 
-  async sendOTP(req: any, res: any) {
+  async sendOTP(req: Request, res: Response) {
     const recipientPhoneNumber = req.body.phoneNumber;
 
-    // kalo gaada phoneNumber gimana?
+    if (!recipientPhoneNumber) {
+      throw new Error("phone number is required")
+    }
     const randomNumber = generateRandomSixDigitsNumber();
 
     const message = `Hello from RumahManis! Your verification code is: ${randomNumber}`;
@@ -89,21 +95,24 @@ export const userController = {
       body: message,
     });
 
-    return res.json({ message: `Message sent with id: ${response.sid}` });
+    res.json({ message: `Message sent with id: ${response.sid}` });
   },
 
-  async verifyCode(req: any, res: any) {
+  async verifyCode(req: Request, res: Response) {
     const recipientPhoneNumber = req.body.phoneNumber;
     const smsCodeReceived = req.body.smsCode;
 
-    // cek request body params
+    if (!smsCodeReceived) {
+      throw new Error("OTP code is required")
+    }
+
     const foundOTP = await redisClient.get(recipientPhoneNumber);
 
     if (foundOTP !== `${smsCodeReceived}`) {
-      return res.status(400).json({ message: `The phone number and the SMS code doesn't match.` });
+      res.status(400).json({ message: `The phone number and the SMS code doesn't match.` });
     }
 
     await redisClient.del(recipientPhoneNumber);
-    return res.json({ message: 'This is a valid match!' });
+    res.json({ message: 'This is a valid match!' });
   }
 }

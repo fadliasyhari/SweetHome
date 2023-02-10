@@ -25,29 +25,30 @@ model Profile {
 }
 
 model Post {
-  id          Int           @id @default(autoincrement())
-  author      User          @relation(fields: [authorId], references: [id])
-  authorId    Int
-  title       String
-  address     String
-  price       Int
-  image       String
-  published   Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  feedback    Feedback[]
-  transaction Transaction[]
+  id           Int           @id @default(autoincrement())
+  author       User          @relation(fields: [authorId], references: [id])
+  authorId     Int
+  title        String
+  address      String
+  numberOfRoom Int           @default(1)
+  price        Int
+  image        String
+  published    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  feedback     Feedback[]
+  transaction  Transaction[]
 }
 
 model Feedback {
-  id        Int      @id @default(autoincrement())
-  parent    Post     @relation(fields: [parentId], references: [id])
+  id        Int       @id @default(autoincrement())
+  parent    Post      @relation(fields: [parentId], references: [id])
   parentId  Int
   title     String
   content   String?
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
   authorId  Int
   deletedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Transaction {
