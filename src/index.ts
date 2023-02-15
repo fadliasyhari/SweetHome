@@ -1,6 +1,7 @@
 import { Role } from '@prisma/client'
 import * as dotenv from 'dotenv'
 import express from 'express'
+import morgan from 'morgan'
 import { exception } from './middlewares/exception'
 
 import { routes } from './routes'
@@ -9,7 +10,7 @@ type ReqUser = {
   id: number,
   name: string,
   phone: string,
-  role: Role
+  role: Role,
 } | null
 
 declare global {
@@ -23,6 +24,7 @@ declare global {
 const app = express()
 dotenv.config()
 
+app.use(morgan('tiny'))
 app.use(express.json())
 app.use('/', routes)
 

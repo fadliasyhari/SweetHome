@@ -8,7 +8,7 @@ export const houseController = {
     const { city, numberOfRooms, minPrice, maxPrice } = req.query
     const listOffers = await prisma.post.findMany({
       where: {
-        // published: true,
+        published: true,
         ...(city ? {
           address: {
             contains: `${city}`
@@ -73,7 +73,7 @@ export const houseController = {
     res.json({ result: createdDraft })
   },
 
-  async publishDraft(req: any, res: any) {
+  async publishDraft(req: Request, res: Response) {
     const houseId = Number(req.body.id)
     const detailHouse = await prisma.post.findUnique({
       where: {
@@ -83,7 +83,7 @@ export const houseController = {
     if (!detailHouse) {
       throw new Error("Offer is not found")
     } else {
-      if (req.user.id != detailHouse.authorId) {
+      if (req.user && req.user.id != detailHouse.authorId) {
         throw new Error("Permission needed")
       }
     }

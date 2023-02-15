@@ -1,23 +1,42 @@
 import { PrismaClient } from "@prisma/client"
+import { Request, Response } from "express"
 
 const prisma = new PrismaClient()
 
 export const orderController = {
-  async createOrder(req: any, res: any) {
-    const result = await prisma.transaction.create({
-      data: { ...req.body },
+  async createOrder(req: Request, res: Response) {
+    const { postId, startDate, endDate } = req.body
+    if (!postId || !startDate || !endDate) {
+      throw new Error("please complete the data")
+    }
+    const note = req.body.note ? req.body.note : ""
+    let user: any
+    if (req.user) {
+      user = req.user
+    }
+    const orderCreate = await prisma.transaction.create({
+      data: {
+        postId: postId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        tenantId: user.id,
+        note: note,
+        status: 0
+      },
     })
-    res.json(result)
+    res.json(orderCreate)
   },
 
-  async dealOrder(req: any, res: any) {
-    const param = Number(req.params.id)
-    const result = await prisma.transaction.update({
+  async dealOrder(req: Request, res: Response) {
+    const orderId = Number(req.params.id)
+    await prisma.transaction.update({
       where: {
-        id: param
+        id: orderId
       },
-      data: { ...req.body },
+      data: {
+        status: req.body.status
+      },
     })
-    res.json(result)
+    res.json({ message: "Order status successfully changed" })
   }
 }
