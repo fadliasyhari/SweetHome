@@ -17,7 +17,7 @@ export const feedbackController = {
   },
 
   async listFeedback(req: any, res: any) {
-    const houseId = Number(req.param.id)
+    const houseId = Number(req.param.houseId)
     if (!houseId) {
       throw new Error("house ID is required")
     }
@@ -26,7 +26,6 @@ export const feedbackController = {
         parentId: houseId
       },
       include: {
-
         author: true
       }
     })

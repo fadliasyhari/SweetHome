@@ -5,17 +5,55 @@ const prisma = new PrismaClient()
 
 export const houseController = {
   async list(req: Request, res: Response) {
-    const { city, numberOfRooms } = req.query
-    const publishedList = await prisma.post.findMany({
-      where: { published: true }
+    const { city, numberOfRooms, minPrice, maxPrice } = req.query
+    const listOffers = await prisma.post.findMany({
+      where: {
+        // published: true,
+        ...(city ? {
+          address: {
+            contains: `${city}`
+          }
+        } : {}),
+        ...(numberOfRooms ? {
+          numberOfRoom: {
+            gte: Number(numberOfRooms)
+          }
+        } : {}),
+        ...(minPrice && maxPrice ? {
+          price: {
+            gte: Number(minPrice),
+            lte: Number(maxPrice)
+          }
+        } : {})
+      }
     })
+    res.json(listOffers)
+  },
 
-    res.json(publishedList)
+  async detail(req: Request, res: Response) {
+    const detailOffer = await prisma.post.findUnique({
+      where: {
+        id: Number(req.params.id)
+      },
+      include: {
+        feedback: true,
+        author: {
+          select: {
+            name: true,
+            phone: true
+          }
+        }
+      }
+    })
+    if (!detailOffer) {
+      throw new Error("Offer not found")
+    }
+    res.json(detailOffer)
   },
 
   async createDraft(req: Request, res: Response) {
     const { title, address, price, image, numberOfRoom } = req.body
-    if(!title || !address || !price || !image || !numberOfRoom) {
+    if (!title || !address || !price || !image || !numberOfRoom) {
       throw new Error("please complete the data")
     }
     let createdDraft: any
@@ -26,7 +64,7 @@ export const houseController = {
           address,
           price,
           image,
-          numberOfRoom, 
+          numberOfRoom,
           published: false,
           author: { connect: { id: req.user.id } },
         },
@@ -36,7 +74,19 @@ export const houseController = {
   },
 
   async publishDraft(req: any, res: any) {
-    const houseId = Number(req.param.id)
+    const houseId = Number(req.body.id)
+    const detailHouse = await prisma.post.findUnique({
+      where: {
+        id: houseId
+      },
+    })
+    if (!detailHouse) {
+      throw new Error("Offer is not found")
+    } else {
+      if (req.user.id != detailHouse.authorId) {
+        throw new Error("Permission needed")
+      }
+    }
     await prisma.post.update({
       data: {
         published: true

@@ -6,5 +6,6 @@ export const houseRoute = Router()
 
 houseRoute.use(authentication)
 houseRoute.get(`/list`, houseController.list)
+houseRoute.get(`/detail/:id`, houseController.detail)
 houseRoute.post(`/draft`, houseController.createDraft)
-houseRoute.post(`/publish/:id`, houseController.publishDraft)
+houseRoute.post(`/publish`, houseController.publishDraft)
