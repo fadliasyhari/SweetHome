@@ -9,7 +9,7 @@ export const exception = [
   },
 
   function ( err: any, req: Request, res: Response, next: NextFunction) {
-    res.status(res.statusCode == 200 ? 500 : res.statusCode).json({
+    res.status(res.statusCode == 200 ? 400 : res.statusCode).json({
       status: 'failed',
       errors: [err.message]
     });

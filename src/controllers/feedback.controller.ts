@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client"
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 
 const prisma = new PrismaClient()
 
@@ -20,10 +20,10 @@ export const feedbackController = {
     res.json(feedback)
   },
 
-  async listFeedback(req: Request, res: Response) {
+  async listFeedback(req: Request, res: Response, next: NextFunction) {
     const houseId = Number(req.params.houseId)
     if (!houseId) {
-      throw new Error("house ID is required")
+      next(new Error("house ID is required"))
     }
     const listFeedback = await prisma.feedback.findMany({
       where: {
@@ -43,10 +43,10 @@ export const feedbackController = {
     res.json(listFeedback)
   },
 
-  async detailFeedback(req: Request, res: Response) {
+  async detailFeedback(req: Request, res: Response, next: NextFunction) {
     const feedbackId = Number(req.params.id)
     if (!feedbackId) {
-      throw new Error("feedback ID is required")
+      next(new Error("feedback ID is required"))
     }
     const detailFeedback = await prisma.feedback.findUnique({
       where: {
@@ -67,7 +67,7 @@ export const feedbackController = {
     res.json(detailFeedback);
   },
 
-  async deleteFeedback(req: Request, res: Response) {
+  async deleteFeedback(req: Request, res: Response, next: NextFunction) {
     const user = req.user
     const detailFeedback = await prisma.feedback.findUnique({
       where: {
@@ -78,7 +78,7 @@ export const feedbackController = {
       }
     })
     if (detailFeedback && user != detailFeedback.author) {
-      throw new Error("you don't have the permission")
+      res.status(400).send("you don't have the permission")
     }
     await prisma.feedback.update({
       where: {

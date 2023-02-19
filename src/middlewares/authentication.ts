@@ -16,7 +16,7 @@ const authentication = async (req: Request, res: Response, next: NextFunction) =
         role: true
       }
     })
-    if (!req.user) throw new Error("user not found")
+    if (!req.user) next(new Error("user not found"))
     next()
   } catch {
     res.status(401).json({

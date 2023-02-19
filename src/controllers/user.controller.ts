@@ -4,15 +4,15 @@ import bcrypt from "bcrypt"
 import { generateRandomSixDigitsNumber } from "../utils/random-number.util"
 import { redisClient } from "../utils/redis-client.util"
 import { twilioClient } from "../utils/twilio-client.util"
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 
 const prisma = new PrismaClient()
 
 export const userController = {
-  async register(req: Request, res: Response) {
+  async register(req: Request, res: Response, next: NextFunction) {
     const { name, role, phone, password } = req.body
     if (!name || !phone || !role || !password) {
-      throw new Error("please complete the data")
+      next(new Error("please complete the data"))
     }
     const hashedPassword = await bcrypt.hash(password, 10)
     const createdUser = await prisma.user.create({
@@ -27,7 +27,7 @@ export const userController = {
     res.json({ name, phone, token: token })
   },
 
-  async login(req: Request, res: Response) {
+  async login(req: Request, res: Response, next: NextFunction) {
     const { phone, password } = req.body;
     const user = await prisma.user.findUnique({
       where: {
@@ -42,14 +42,14 @@ export const userController = {
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
-      throw new Error('login failed')
+      next(new Error('login failed'))
     }
 
     let token = jwToken.sign({ id: user.id, phone: user.phone, role: user.role })
     res.json({ phone: user.phone, name: user.name, token: token })
   },
 
-  async getAllTenant(_req: Request, res: Response) {
+  async getAllTenant(_req: Request, res: Response,) {
     const listTenant = await prisma.user.findMany({
       select: {
         id: true,
@@ -77,11 +77,11 @@ export const userController = {
     res.json({ result: listOwner })
   },
 
-  async sendOTP(req: Request, res: Response) {
+  async sendOTP(req: Request, res: Response, next: NextFunction) {
     const recipientPhoneNumber = req.body.phoneNumber;
 
     if (!recipientPhoneNumber) {
-      throw new Error("phone number is required")
+      next(new Error("phone number is required"))
     }
     const randomNumber = generateRandomSixDigitsNumber();
 
@@ -98,12 +98,12 @@ export const userController = {
     res.json({ message: `Message sent with id: ${response.sid}` });
   },
 
-  async verifyCode(req: Request, res: Response) {
+  async verifyCode(req: Request, res: Response, next: NextFunction) {
     const recipientPhoneNumber = req.body.phoneNumber;
     const smsCodeReceived = req.body.smsCode;
 
     if (!smsCodeReceived) {
-      throw new Error("OTP code is required")
+      next(new Error("OTP code is required"))
     }
 
     const foundOTP = await redisClient.get(recipientPhoneNumber);

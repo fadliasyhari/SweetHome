@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client"
-import { Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 
 const prisma = new PrismaClient()
 
@@ -30,7 +30,7 @@ export const houseController = {
     res.json(listOffers)
   },
 
-  async detail(req: Request, res: Response) {
+  async detail(req: Request, res: Response, next: NextFunction) {
     const detailOffer = await prisma.post.findUnique({
       where: {
         id: Number(req.params.id)
@@ -46,15 +46,15 @@ export const houseController = {
       }
     })
     if (!detailOffer) {
-      throw new Error("Offer not found")
+      next(new Error("Offer not found"))
     }
     res.json(detailOffer)
   },
 
-  async createDraft(req: Request, res: Response) {
+  async createDraft(req: Request, res: Response, next: NextFunction) {
     const { title, address, price, image, numberOfRoom } = req.body
     if (!title || !address || !price || !image || !numberOfRoom) {
-      throw new Error("please complete the data")
+      next(new Error("please complete the data"))
     }
     let createdDraft: any
     if (req.user) {
@@ -73,7 +73,7 @@ export const houseController = {
     res.json({ result: createdDraft })
   },
 
-  async publishDraft(req: Request, res: Response) {
+  async publishDraft(req: Request, res: Response, next: NextFunction) {
     const houseId = Number(req.body.id)
     const detailHouse = await prisma.post.findUnique({
       where: {
@@ -81,10 +81,10 @@ export const houseController = {
       },
     })
     if (!detailHouse) {
-      throw new Error("Offer is not found")
+      next(new Error("Offer is not found"))
     } else {
       if (req.user && req.user.id != detailHouse.authorId) {
-        throw new Error("Permission needed")
+        next(new Error("Permission needed"))
       }
     }
     await prisma.post.update({
